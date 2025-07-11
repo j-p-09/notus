@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <title>Notni zapisi</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      font-size: 16px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 10px;
+      background: #fff;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    li:hover {
+      background: #e0e0e0;
+    }
+    #login, #app {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="login">
+  <h2>Prijava</h2>
+  <input type="text" id="user" placeholder="Uporabniško ime">
+  <input type="password" id="pass" placeholder="Geslo">
+  <button onclick="login()">Prijavi se</button>
+</div>
+
+<div id="app">
+  <h2>Iskanje not</h2>
+  <input type="text" id="search" placeholder="Iskanje...">
+  <ul id="pdfList"></ul>
+  <button onclick="odjava()">Odjava</button>
+</div>
+
+<script>
+const pravilniUser = "demo";
+const pravilniPass = "demo";
+
+function login() {
+  const u = document.getElementById("user").value;
+  const p = document.getElementById("pass").value;
+  if (u === pravilniUser && p === pravilniPass) {
+    sessionStorage.setItem("prijavljen", "da");
+    prikaziApp();
+  } else {
+    alert("Napačno uporabniško ime ali geslo.");
+  }
+}
+
+function prikaziApp() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  naloziSeznam();
+}
+
+function naloziSeznam() {
+  fetch("seznam.php")
+    .then(res => res.json())
+    .then(data => {
+      const iskanje = document.getElementById("search");
+      const lista = document.getElementById("pdfList");
+
+      function filtriraj() {
+        const niz = iskanje.value.toLowerCase();
+        lista.innerHTML = "";
+        data.forEach(dat => {
+          if (dat.toLowerCase().includes(niz)) {
+            const li = document.createElement("li");
+            li.textContent = dat.replace(".pdf", "");
+            li.onclick = () => prikaziMoznosti(dat);
+            lista.appendChild(li);
+          }
+        });
+      }
+
+      iskanje.addEventListener("input", filtriraj);
+      filtriraj(); // inicialni prikaz
+    });
+}
+
+function prikaziMoznosti(ime) {
+  const url = encodeURIComponent(ime);
+  if (confirm("Kaj želiš narediti s pesmijo: " + ime.replace(".pdf", "") + "?\n\nPritisni OK za ogled, Cancel za prenos.")) {
+    window.open(url, "_blank");
+  } else {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = ime;
+    a.click();
+  }
+}
+
+function odjava() {
+  sessionStorage.removeItem("prijavljen");
+  location.reload();
+}
+
+if (sessionStorage.getItem("prijavljen") === "da") {
+  prikaziApp();
+} else {
+  document.getElementById("login").style.display = "block";
+}
+</script>
+
+</body>
+</html>
